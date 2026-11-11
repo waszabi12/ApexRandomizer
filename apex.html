@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex Legends Randomizer</title>
+
+    <!-- Iconify hivatalos SVG motor beillesztése (Ez oldja meg az ikonok betöltését!) -->
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: #0b0f19; color: #f8fafc; padding: 2rem 1rem; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .title { text-align: center; font-size: 2rem; margin-bottom: 2rem; color: #f8fafc; }
+        .apex-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .apex-layout { grid-template-columns: 1fr; } }
+
+        .card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 1.5rem; }
+        .card-title { font-size: 1.25rem; margin-bottom: 0.5rem; color: #f8fafc; }
+        .description { font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem; }
+
+        .class-section { margin-bottom: 1.2rem; }
+        .class-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; }
+        .class-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+        .char-card { background-color: #1f2937; border-radius: 6px; padding: 0.35rem 0.6rem; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.75rem; user-select: none; transition: background 0.2s; }
+        .char-card:hover { background-color: #374151; }
+        .char-card.inactive { opacity: 0.35; filter: grayscale(80%); }
+
+        .loadout-dropzones { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+        .dropzone-box { background-color: #0f172a; border: 2px dashed #334155; border-radius: 8px; padding: 0.5rem; min-height: 220px; max-height: 300px; overflow-y: auto; }
+        .dropzone-box.drag-over { border-color: #6366f1; background-color: #1e293b; }
+        .dropzone-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; text-align: center; }
+        .ammo-subheading { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; margin: 0.4rem 0 0.2rem 0; }
+        .draggable-weapon { background-color: #334155; border-radius: 4px; padding: 0.25rem 0.5rem; margin-bottom: 0.3rem; cursor: grab; text-align: center; font-size: 0.75rem; color: #f8fafc; user-select: none; }
+        .draggable-weapon:hover { background-color: #475569; }
+
+        .result-box { background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 1rem; margin: 1rem 0; min-height: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .btn-primary { width: 100%; background-color: #f97316; color: white; border: none; border-radius: 6px; padding: 0.75rem; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        .btn-primary:hover { background-color: #ea580c; }
+    </style>
+</head>
+<body>
+
+    <main class="container">
+        <h1 class="title">Apex Legends Randomizer</h1>
+        
+        <div class="apex-layout">
+            <!-- Character Randomizer -->
+            <div class="card">
+                <h2 class="card-title">Character Randomizer</h2>
+                <p class="description">Click on a legend to enable/disable them by class.</p>
+                <div class="char-container" id="charContainer"></div>
+                <div id="charResult" class="result-box">
+                    <span style="color: #64748b; font-style: italic; font-size: 0.9rem;">No character selected yet</span>
+                </div>
+                <button onclick="randomizeCharacter()" class="btn-primary">Roll Character!</button>
+            </div>
+            <!-- Loadout Randomizer -->
+            <div class="card">
+                <h2 class="card-title">Loadout Randomizer</h2>
+                <p class="description">Drag weapons between Primary and Secondary pools.</p>
+                
+                <div class="loadout-dropzones">
+                    <div class="dropzone-box" id="zonePrimary" ondragover="allowDrop(event)" ondragleave="removeDropStyle(event)" ondrop="dropWeapon(event, 'primary')">
+                        <div class="dropzone-title" style="color: #38bdf8;">Primary Pool</div>
+                        <div id="primaryWeaponsContent"></div>
+                    </div>
+                    <div class="dropzone-box" id="zoneSecondary" ondragover="allowDrop(event)" ondragleave="removeDropStyle(event)" ondrop="dropWeapon(event, 'secondary')">
+                        <div class="dropzone-title" style="color: #fb923c;">Secondary Pool</div>
+                        <div id="secondaryWeaponsContent"></div>
+                    </div>
+                </div>
+                <div style="margin: 0.8rem 0 0.5rem 0; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+                    <input type="checkbox" id="trueRandomCheckbox" style="cursor: pointer; width: 16px; height: 16px; accent-color: #f97316;">
+                    <label for="trueRandomCheckbox" style="cursor: pointer; color: #cbd5e1; user-select: none;">True Random (Ignore pools, any 2 weapons)</label>
+                </div>
+
+                <div id="loadoutResult" class="result-box">
+                    <span style="color: #64748b; font-style: italic; font-size: 0.9rem;">No weapons rolled yet</span>
+                </div>
+
+                <button onclick="randomizeLoadout()" class="btn-primary">Roll Loadout!</button>
+            </div>
+            <!-- Challange Cards -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2 class="card-title">Apex Challenge Cards</h2>
+                <p class="description">Roll a random handicap or challenge for your match.</p>
+                
+                <div id="challengeResult" class="result-box">
+                    <span style="color: #64748b; font-style: italic; font-size: 0.9rem;">No challenge rolled yet</span>
+                </div>
+
+                <button onclick="randomizeChallenge()" class="btn-primary" style="background-color: #8b5cf6;">Roll Challenge!</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Character logika
+        const legendClasses = [
+            {
+                className: "Assault",
+                color: "#C54634",
+                classIcon: "game-icons:bullets",
+                legends: [
+                    { name: "Bangalore", icon: "game-icons:smoke-bomb" },
+                    { name: "Revenant", icon: "game-icons:daemon-skull" },
+                    { name: "Fuse", icon: "game-icons:fire-bomb" },
+                    { name: "Mad Maggie", icon: "game-icons:mace-head" },
+                    { name: "Ballistic", icon: "game-icons:pistol-gun" }
+                ]
+            },
+            {
+                className: "Skirmisher",
+                color: "#A69245",
+                classIcon: "game-icons:running-shoe",
+                legends: [
+                    { name: "Pathfinder", icon: "game-icons:grapple" },
+                    { name: "Wraith", icon: "game-icons:hood" },
+                    { name: "Octane", icon: "game-icons:running-shoe" },
+                    { name: "Horizon", icon: "game-icons:galaxy" },
+                    { name: "Ash", icon: "game-icons:katana" },
+                    { name: "Alter", icon: "game-icons:portal" },
+                    { name: "Axle", icon: "game-icons:robot-leg" }
+                ]
+            },
+            {
+                className: "Recon",
+                color: "#7B4BF1",
+                classIcon: "game-icons:radar-sweep",
+                legends: [
+                    { name: "Bloodhound", icon: "game-icons:wolf-head" },
+                    { name: "Crypto", icon: "game-icons:laptop" },
+                    { name: "Valkyrie", icon: "game-icons:jetpack" },
+                    { name: "Seer", icon: "game-icons:cork-hat" },
+                    { name: "Vantage", icon: "game-icons:bat-wing" },
+                    { name: "Sparrow", icon: "game-icons:pocket-bow" }
+                ]
+            },
+            {
+                className: "Support",
+                color: "#4A6FCB",
+                classIcon: "game-icons:health-normal",
+                legends: [
+                    { name: "Gibraltar", icon: "game-icons:shield" },
+                    { name: "Lifeline", icon: "game-icons:health-normal" },
+                    { name: "Mirage", icon: "game-icons:top-hat" },
+                    { name: "Loba", icon: "game-icons:ring" },
+                    { name: "Newcastle", icon: "game-icons:police-badge" },
+                    { name: "Conduit", icon: "game-icons:battery-pack" }
+                ]
+            },
+            {
+                className: "Controller",
+                color: "#74B056",
+                classIcon: "game-icons:sentry-gun",
+                legends: [
+                    { name: "Caustic", icon: "game-icons:gas-mask" },
+                    { name: "Wattson", icon: "game-icons:electric" },
+                    { name: "Rampart", icon: "game-icons:sentry-gun" },
+                    { name: "Catalyst", icon: "game-icons:spiky-pit" }
+                ]
+            }
+        ];
+
+        let legendStatus = {};
+        legendClasses.forEach(group => {
+            group.legends.forEach(l => { legendStatus[l.name] = true; });
+        });
+
+        function renderCharacters() {
+            const container = document.getElementById('charContainer');
+            container.innerHTML = '';
+
+            legendClasses.forEach(group => {
+                const section = document.createElement('div');
+                section.className = 'class-section';
+                section.innerHTML = `
+                    <div class="class-title" style="color: ${group.color};">
+                        <iconify-icon icon="${group.classIcon}" style="font-size: 18px;"></iconify-icon>
+                        <span>${group.className}</span>
+                    </div>
+                    <div class="class-grid" id="grid-${group.className}"></div>
+                `;
+                container.appendChild(section);
+
+                const grid = section.querySelector(`#grid-${group.className}`);
+                group.legends.forEach(l => {
+                    const isActive = legendStatus[l.name];
+                    const card = document.createElement('div');
+                    card.className = `char-card ${isActive ? '' : 'inactive'}`;
+                    card.onclick = () => { legendStatus[l.name] = !legendStatus[l.name]; renderCharacters(); };
+                    card.innerHTML = `<iconify-icon icon="${l.icon}" style="font-size: 16px; color: #ffffff;"></iconify-icon><span>${l.name}</span>`;
+                    grid.appendChild(card);
+                });
+            });
+        }
+
+        function randomizeCharacter() {
+            let activeLegends = [];
+            legendClasses.forEach(group => {
+                group.legends.forEach(l => {
+                    if (legendStatus[l.name]) {
+                        activeLegends.push({ name: l.name, color: group.color, classIcon: group.classIcon, icon: l.icon });
+                    }
+                });
+            });
+
+            if (activeLegends.length === 0) {
+                document.getElementById('charResult').innerHTML = `<span style="color: #ef4444; font-weight: bold; font-size: 0.9rem;">Enable at least one legend!</span>`;
+                return;
+            }
+
+            const randomLegend = activeLegends[Math.floor(Math.random() * activeLegends.length)];
+            document.getElementById('charResult').innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; font-size: 1.25rem; font-weight: bold; color: ${randomLegend.color};">
+                    <iconify-icon icon="${randomLegend.classIcon}" style="font-size: 24px;"></iconify-icon>
+                    <span>${randomLegend.name}</span>
+                </div>
+            `;
+        }
+
+        // Loadout logika
+        const weaponAmmoTypes = [
+            { type: "Light Ammo", color: "#DE954F", weapons: ["R-301 Carbine", "R-99", "Alternator", "P2020", "G7 Scout", "Spitfire"] },
+            { type: "Heavy Ammo", color: "#6EC8AF", weapons: ["Flatline", "Hemlok", "Prowler", "C.A.R. SMG", "Wingman", "Rampage"] },
+            { type: "Energy Ammo", color: "#C7D94B", weapons: ["Volt SMG", "Nemesis", "Devotion", "L-STAR", "Triple Take", "Havoc"] },
+            { type: "Shotgun", color: "#E72B12", weapons: ["Peacekeeper", "Mastiff", "EVA-8 Auto"] }
+        ];
+
+        let weaponLocations = {
+            "R-301 Carbine": "primary", "R-99": "secondary", "Alternator": "secondary", "P2020": "secondary", "G7 Scout": "primary", "Spitfire": "primary",
+            "Flatline": "primary", "Hemlok": "primary", "Prowler": "secondary", "C.A.R. SMG": "secondary", "Wingman": "secondary", "Rampage": "primary",
+            "Volt SMG": "secondary", "Nemesis": "primary", "Devotion": "primary", "L-STAR": "primary", "Triple Take": "primary", "Havoc": "primary",
+            "Peacekeeper": "secondary", "Mastiff": "secondary", "EVA-8 Auto": "secondary"
+        };
+
+        function renderWeapons() {
+            const pContent = document.getElementById('primaryWeaponsContent');
+            const sContent = document.getElementById('secondaryWeaponsContent');
+            pContent.innerHTML = ''; sContent.innerHTML = '';
+
+            weaponAmmoTypes.forEach(group => {
+                const pGroupWeapons = group.weapons.filter(w => weaponLocations[w] === 'primary');
+                if (pGroupWeapons.length > 0) {
+                    const subHeader = document.createElement('div');
+                    subHeader.className = 'ammo-subheading';
+                    subHeader.style.color = group.color;
+                    subHeader.innerText = group.type;
+                    pContent.appendChild(subHeader);
+                    pGroupWeapons.forEach(w => pContent.appendChild(createWeaponCard(w)));
+                }
+
+                const sGroupWeapons = group.weapons.filter(w => weaponLocations[w] === 'secondary');
+                if (sGroupWeapons.length > 0) {
+                    const subHeader = document.createElement('div');
+                    subHeader.className = 'ammo-subheading';
+                    subHeader.style.color = group.color;
+                    subHeader.innerText = group.type;
+                    sContent.appendChild(subHeader);
+                    sGroupWeapons.forEach(w => sContent.appendChild(createWeaponCard(w)));
+                }
+            });
+        }
+
+        function createWeaponCard(weaponName) {
+            const el = document.createElement('div');
+            el.className = 'draggable-weapon'; el.draggable = true; el.innerText = weaponName;
+            el.ondragstart = (e) => { e.dataTransfer.setData('text/plain', weaponName); };
+            return el;
+        }
+
+        function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+        function removeDropStyle(ev) { ev.currentTarget.classList.remove('drag-over'); }
+        function dropWeapon(ev, targetPool) {
+            ev.preventDefault(); ev.currentTarget.classList.remove('drag-over');
+            const weaponName = ev.dataTransfer.getData('text/plain');
+            if (weaponName) { weaponLocations[weaponName] = targetPool; renderWeapons(); }
+        }
+
+        function randomizeLoadout() {
+            const isTrueRandom = document.getElementById('trueRandomCheckbox').checked;
+
+            let weapon1Name, weapon2Name;
+
+            if (isTrueRandom) {
+                let allWeapons = [];
+                weaponAmmoTypes.forEach(group => {
+                    allWeapons.push(...group.weapons);
+                });
+
+                if (allWeapons.length === 0) return;
+
+                weapon1Name = allWeapons[Math.floor(Math.random() * allWeapons.length)];
+                weapon2Name = allWeapons[Math.floor(Math.random() * allWeapons.length)];
+
+            } else {
+                let activePrimary = [], activeSecondary = [];
+                Object.keys(weaponLocations).forEach(w => {
+                    if (weaponLocations[w] === 'primary') activePrimary.push(w);
+                    if (weaponLocations[w] === 'secondary') activeSecondary.push(w);
+                });
+
+                if (activePrimary.length === 0 || activeSecondary.length === 0) {
+                    document.getElementById('loadoutResult').innerHTML = `<span style="color: #ef4444; font-weight: bold; font-size: 0.85rem;">Both pools must have at least one weapon!</span>`;
+                    return;
+                }
+
+                weapon1Name = activePrimary[Math.floor(Math.random() * activePrimary.length)];
+                weapon2Name = activeSecondary[Math.floor(Math.random() * activeSecondary.length)];
+            }
+
+            let weapon1Color = "#ffffff", weapon2Color = "#ffffff";
+            weaponAmmoTypes.forEach(group => {
+                if (group.weapons.includes(weapon1Name)) weapon1Color = group.color;
+                if (group.weapons.includes(weapon2Name)) weapon2Color = group.color;
+            });
+
+            document.getElementById('loadoutResult').innerHTML = `
+                <div style="font-size: 0.95rem; color: #ffffff; margin-bottom: 0.2rem;">
+                    Primary: <strong style="color: ${weapon1Color};">${weapon1Name}</strong>
+                </div>
+                <div style="font-size: 0.95rem; color: #ffffff;">
+                    Secondary: <strong style="color: ${weapon2Color};">${weapon2Name}</strong>
+                </div>
+            `;
+        }
+
+        // Challange logika
+        const challengesList = [
+            // RARE (Kék - 50%)
+            { title: "One-Handed", description: "You can only carry one gun the entire match.", rarity: "rare" },
+            { title: "Small Boi", description: "You can only use Shield Cells and Syringes!", rarity: "rare" },
+            { title: "Single and Ready to Mingle", description: "If your gun allows single-fire mode, you must use it!", rarity: "rare" },
+            { title: "Copycat", description: "You must swap your weapon every single time you find a death box.", rarity: "rare" },
+            { title: "No Scope", description: "You cannot attach any optics (scopes) to your weapons. Strip them all off!", rarity: "rare" },
+            { title: "Anger Issues", description: "You can only open doors by kicking them!", rarity: "rare" },
+            { title: "Matchmaker", description: "You gotta have two of the same gun! (your choice tho)", rarity: "rare" },
+            { title: "Graverobber", description: "You can only get non weapon loot from deathboxes! (heals, attachments, ammo...)", rarity: "rare" },
+            { title: "Respect the Dead", description: "You cant loot deathboxes!", rarity: "rare" },
+
+            // EPIC (Lila - 30%)
+            { title: "Executioner", description: "You have to use your finisher on every enemy you down!", rarity: "epic" },
+            { title: "Quick Draw", description: "When your ultimate is ready, you gotta use it immediately!", rarity: "epic" },
+            { title: "No Shield Healing", description: "You cannot use Shield Cells or Batteries. Health heals only (and shield swaps)!", rarity: "epic" },
+            { title: "Picky Eater", description: "You can only use purple or higher tier attachments! (scopes included)", rarity: "epic" },
+            { title: "20/20 Vision", description: "Everytime you find a scope of higher range you have to equip it! (1x->2x->3x->2-4x->...)", rarity: "epic" },
+            { title: "Kingsley", description: "Only one attachment per weapon!", rarity: "epic" },
+            { title: "Rush E", description: "Gotta always be in the ring! (if not, cant shoot/loot)", rarity: "epic" },
+
+            // LEGENDARY (Sárga - 15%)
+            { title: "Early Bird", description: "You're the Jumpmaster and you immediately drop!", rarity: "legendary" },
+            { title: "Pacifist?", description: "No shooting allowed until top 10 squads! (melee, grenades, or abilities are allowed)", rarity: "legendary" },
+            { title: "UNO", description: "You can only have one stack of EVERYTHING! (ammo, shields, heals, and grenades...)", rarity: "legendary" },
+            { title: "Ground Floor", description: "You are not allowed to use ziplines, jump towers, portals, or movement abilities vertically.", rarity: "legendary" },
+
+            // MYTHIC (Piros - 5%)
+            { title: "Sneaky Shit", description: "Crouched walk only!", rarity: "mythic" },
+            { title: "Newcastle", description: "Newcastle...", rarity: "mythic" },
+            { title: "Reborn", description: "You can only use Phoenix Kits to heal! (healing abilities are allowed)", rarity: "mythic" },
+            { title: "Silent Assassin", description: "Voice chat mute: You cannot speak or make callouts to your teammates.", rarity: "mythic" }
+        ];
+
+        function randomizeChallenge() {
+            if (challengesList.length === 0) return;
+
+            const rarityWeights = {
+                rare: 50,      // Kék (50%)
+                epic: 30,      // Lila (30%)
+                legendary: 15, // Sárga (15%)
+                mythic: 5      // Piros (5%)
+            };
+
+            
+            const rarityStyles = {
+                rare: { name: "RARE", color: "#38bdf8" },         // Világoskék
+                epic: { name: "EPIC", color: "#c084fc" },         // Lila
+                legendary: { name: "LEGENDARY", color: "#facc15" }, // Sárga
+                mythic: { name: "MYTHIC", color: "#ef4444" }       // Piros
+            };
+
+        
+            let randomNum = Math.random() * 100;
+            let selectedRarity = "rare";
+            let cumulative = 0;
+
+            for (let r in rarityWeights) {
+                cumulative += rarityWeights[r];
+                if (randomNum < cumulative) {
+                    selectedRarity = r;
+                    break;
+                }
+            }
+
+            let pool = challengesList.filter(c => c.rarity === selectedRarity);
+
+            if (pool.length === 0) pool = challengesList;
+
+            const randomChallenge = pool[Math.floor(Math.random() * pool.length)];
+            const style = rarityStyles[randomChallenge.rarity];
+
+            document.getElementById('challengeResult').innerHTML = `
+                <div style="font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; color: ${style.color}; margin-bottom: 0.2rem; text-transform: uppercase;">
+                    — ${style.name} CHALLENGE —
+                </div>
+                <div style="font-size: 1.15rem; font-weight: bold; color: ${style.color}; margin-bottom: 0.3rem;">
+                    ${randomChallenge.title}
+                </div>
+                <div style="font-size: 0.9rem; color: #e2e8f0; max-width: 600px; line-height: 1.4;">
+                    "${randomChallenge.description}"
+                </div>
+            `;
+        }
+
+        window.onload = () => { renderCharacters(); renderWeapons(); };
+    </script>
+
+    <footer style="text-align: center; margin-top: 3rem; color: #64748b; font-size: 0.8rem; border-top: 1px solid #1f2937; padding-top: 1rem;">
+        Apex Legends Randomizer &bull; @MadeBySzabi &bull; <span style="color: #94a3b8;">v1.2</span>
+    </footer>
+</body>
+</html>
