@@ -330,7 +330,7 @@
 
         // Challange logika
         const challengesList = [
-            // RARE (Kék - 50%)
+            // RARE (Kék - 55%)
             { title: "One-Handed", description: "You can only carry one gun the entire match.", rarity: "rare" },
             { title: "Small Boi", description: "You can only use Shield Cells and Syringes!", rarity: "rare" },
             { title: "Single and Ready to Mingle", description: "If your gun allows single-fire mode, you must use it!", rarity: "rare" },
@@ -341,10 +341,11 @@
             { title: "Graverobber", description: "You can only get non weapon loot from deathboxes! (heals, attachments, ammo...)", rarity: "rare" },
             { title: "Respect the Dead", description: "You cant loot deathboxes!", rarity: "rare" },
 
-            // EPIC (Lila - 30%)
+            // EPIC (Lila - 25%)
             { title: "Executioner", description: "You have to use your finisher on every enemy you down!", rarity: "epic" },
             { title: "Quick Draw", description: "When your ultimate is ready, you gotta use it immediately!", rarity: "epic" },
-            { title: "No Shield Healing", description: "You cannot use Shield Cells or Batteries. Health heals only (and shield swaps)!", rarity: "epic" },
+            { title: "Masochist", description: "No health healing! (only from abilities)", rarity: "epic" },
+            { title: "Exhibitionism", description: "You cannot use Shield Cells or Batteries. Health heals only (and shield swaps)!", rarity: "epic" },
             { title: "Picky Eater", description: "You can only use purple or higher tier attachments! (scopes included)", rarity: "epic" },
             { title: "20/20 Vision", description: "Everytime you find a scope of higher range you have to equip it! (1x->2x->3x->2-4x->...)", rarity: "epic" },
             { title: "Kingsley", description: "Only one attachment per weapon!", rarity: "epic" },
@@ -352,7 +353,7 @@
 
             // LEGENDARY (Sárga - 15%)
             { title: "Early Bird", description: "You're the Jumpmaster and you immediately drop!", rarity: "legendary" },
-            { title: "Pacifist?", description: "No shooting allowed until top 10 squads! (melee, grenades, or abilities are allowed)", rarity: "legendary" },
+            { title: "Bipolar Pacifist", description: "No shooting allowed until top 10 squads! (melee, grenades, or abilities are allowed)", rarity: "legendary" },
             { title: "UNO", description: "You can only have one stack of EVERYTHING! (ammo, shields, heals, and grenades...)", rarity: "legendary" },
             { title: "Ground Floor", description: "You are not allowed to use ziplines, jump towers, portals, or movement abilities vertically.", rarity: "legendary" },
 
@@ -367,8 +368,8 @@
             if (challengesList.length === 0) return;
 
             const rarityWeights = {
-                rare: 50,      // Kék (50%)
-                epic: 30,      // Lila (30%)
+                rare: 55,      // Kék (55%)
+                epic: 25,      // Lila (25%)
                 legendary: 15, // Sárga (15%)
                 mythic: 5      // Piros (5%)
             };
@@ -418,7 +419,7 @@
     </script>
 
     <footer style="text-align: center; margin-top: 3rem; color: #64748b; font-size: 0.8rem; border-top: 1px solid #1f2937; padding-top: 1rem;">
-        Apex Legends Randomizer &bull; @MadeBySzabi &bull; <span style="color: #94a3b8;">v1.2</span>
+        Apex Legends Randomizer &bull; @MadeBySzabi &bull; <span style="color: #94a3b8;">v1.2.1</span>
     </footer>
 </body>
 </html>
